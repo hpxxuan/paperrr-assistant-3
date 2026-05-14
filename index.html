@@ -2,132 +2,118 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Personal Assistant Pro</title>
-    <!-- Tailwind CSS CDN -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paperrr 2.0 - Plan Assistant</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Vue 3 CDN -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        .app-container { max-width: 480px; min-height: 100vh; background: #ffffff; margin: 0 auto; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
-        .glass-nav { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.8); border-top: 1px solid #eee; }
-        .safe-area-bottom { padding-bottom: calc(env(safe-area-inset-bottom) + 70px); }
-        input:focus { outline: none; border-color: #6366f1; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { background-color: #FFF5F7; font-family: 'Inter', sans-serif; color: #4A4A4A; }
+        .pink-gradient-bg { background: linear-gradient(135deg, #FF5E9B 0%, #FF4181 100%); }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-radius: 24px; overflow: hidden; }
+        .calendar-cell { aspect-ratio: 1 / 1.1; border: 0.5px solid #F0F0F0; background: #FFF; transition: all 0.2s; }
+        .calendar-cell:hover { background: #FFF9FA; }
+        .switch-pill { background: #FFFFFF; border-radius: 50px; padding: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     </style>
 </head>
-<body>
+<body class="p-4 md:p-12">
 
-<div id="app" class="app-container flex flex-col">
-    <!-- Header -->
-    <header class="p-6 pb-2">
-        <h1 class="text-2xl font-bold text-gray-800">{{ currentTabName }}</h1>
-        <p class="text-sm text-gray-500">{{ todayDate }}</p>
-    </header>
-
-    <main class="flex-grow p-6 safe-area-bottom">
-        
-        <!-- Tab 1: 任務清單 -->
-        <div v-if="activeTab === 'todo'" class="space-y-4">
-            <div class="flex gap-2 mb-6">
-                <input v-model="newTask" @keyup.enter="addTodo" type="text" placeholder="新增任務..." class="flex-1 bg-gray-100 rounded-2xl px-4 py-3 text-sm">
-                <button @click="addTodo" class="bg-indigo-600 text-white p-3 rounded-2xl">
-                    <i data-lucide="plus"></i>
-                </button>
-            </div>
-            <div v-for="(item, index) in todos" :key="index" class="flex items-center p-4 bg-gray-50 rounded-2xl transition-all" :class="{'opacity-50': item.done}">
-                <input type="checkbox" v-model="item.done" class="w-5 h-5 rounded-full border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                <span class="ml-3 text-gray-700" :class="{'line-through': item.done}">{{ item.text }}</span>
+<div id="app" class="max-w-6xl mx-auto">
+    <!-- Header: 標誌與切換按鈕 -->
+    <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 pink-gradient-bg rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-pink-200">P</div>
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-slate-800">Paperrr <span class="font-light">✸</span> 2.0</h1>
+                <p class="text-[10px] tracking-[0.2em] text-pink-400 font-bold uppercase">Cloud Sync Plan Assistant</p>
             </div>
         </div>
 
-        <!-- Tab 2: 行程規劃 (簡化版) -->
-        <div v-if="activeTab === 'calendar'" class="space-y-4">
-            <div class="bg-indigo-50 p-4 rounded-3xl border border-indigo-100">
-                <h3 class="font-semibold text-indigo-900 mb-2">今日行程</h3>
-                <div v-for="event in events" class="flex gap-3 py-2 border-l-2 border-indigo-300 pl-3 mb-2">
-                    <span class="text-xs font-bold text-indigo-600">{{ event.time }}</span>
-                    <span class="text-sm text-gray-700">{{ event.title }}</span>
+        <div class="switch-pill flex items-center w-64">
+            <button @click="viewMode = 'month'" :class="viewMode === 'month' ? 'pink-gradient-bg text-white shadow-md' : 'text-slate-400'" class="flex-1 py-2 px-4 rounded-full text-sm font-bold transition-all">月度概覽</button>
+            <button @click="viewMode = 'week'" :class="viewMode === 'week' ? 'pink-gradient-bg text-white shadow-md' : 'text-slate-400'" class="flex-1 py-2 px-4 rounded-full text-sm font-bold transition-all">週度執行</button>
+        </div>
+    </header>
+
+    <!-- 主容器：月曆卡片 -->
+    <div class="bg-white/60 backdrop-blur-md rounded-[40px] p-8 shadow-2xl shadow-pink-100 border border-white">
+        <!-- 星期表頭 -->
+        <div class="grid grid-cols-7 mb-6 text-center">
+            <div v-for="day in weekDays" :key="day" class="text-orange-300 font-medium text-sm">{{ day }}</div>
+        </div>
+
+        <!-- 月曆格線 -->
+        <div v-if="viewMode === 'month'" class="calendar-grid border border-slate-50">
+            <!-- 空白格 (上個月) -->
+            <div v-for="empty in firstDayOffset" :key="'empty-'+empty}" class="calendar-cell bg-slate-50/30"></div>
+            
+            <!-- 日期格 -->
+            <div v-for="date in daysInMonth" :key="date" class="calendar-cell p-3 relative group cursor-pointer" @click="selectDate(date)">
+                <span class="text-[11px] font-bold text-slate-300 group-hover:text-pink-400 transition-colors">{{ date }}</span>
+                <!-- 內容佔位符 -->
+                <div class="mt-1 h-full w-full overflow-hidden">
+                    <div v-if="getNote(date)" class="text-[10px] text-pink-500 font-medium leading-tight truncate">· {{ getNote(date) }}</div>
                 </div>
             </div>
         </div>
 
-        <!-- Tab 3: 隨手筆記 -->
-        <div v-if="activeTab === 'notes'" class="space-y-4">
-            <textarea v-model="note" placeholder="在這裡記錄任何靈感..." class="w-full h-64 bg-yellow-50 p-4 rounded-3xl text-gray-700 border-none resize-none"></textarea>
+        <!-- 週度模式佔位 -->
+        <div v-else class="py-20 text-center text-slate-300 italic">
+            週度執行介面正在同步中...
         </div>
+    </div>
 
-    </main>
+    <!-- 底部標題 -->
+    <div class="mt-8 flex items-center gap-2">
+        <h2 class="text-2xl font-bold text-slate-700">計畫規劃✦</h2>
+    </div>
 
-    <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 w-full max-w-[480px] glass-nav flex justify-around py-3 px-6">
-        <button @click="activeTab = 'todo'" :class="activeTab === 'todo' ? 'text-indigo-600' : 'text-gray-400'" class="flex flex-col items-center">
-            <i data-lucide="check-circle-2"></i>
-            <span class="text-[10px] mt-1 font-medium">任務</span>
-        </button>
-        <button @click="activeTab = 'calendar'" :class="activeTab === 'calendar' ? 'text-indigo-600' : 'text-gray-400'" class="flex flex-col items-center">
-            <i data-lucide="calendar"></i>
-            <span class="text-[10px] mt-1 font-medium">行程</span>
-        </button>
-        <button @click="activeTab = 'notes'" :class="activeTab === 'notes' ? 'text-indigo-600' : 'text-gray-400'" class="flex flex-col items-center">
-            <i data-lucide="edit-3"></i>
-            <span class="text-[10px] mt-1 font-medium">筆記</span>
-        </button>
-    </nav>
+    <!-- 簡易彈窗：點擊日期新增內容 -->
+    <div v-if="showModal" class="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 class="text-lg font-bold mb-4 text-pink-600">新增計畫 ({{ currentSelectedDate }}日)</h3>
+            <textarea v-model="tempNote" class="w-full h-32 p-3 bg-slate-50 rounded-xl mb-4 border-none focus:ring-2 focus:ring-pink-300" placeholder="輸入今天的安排..."></textarea>
+            <div class="flex gap-2">
+                <button @click="showModal = false" class="flex-1 py-3 text-slate-400 font-medium">取消</button>
+                <button @click="saveNote" class="flex-1 py-3 pink-gradient-bg text-white rounded-xl font-bold">儲存計畫</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-    const { createApp, ref, computed, onMounted, nextTick } = Vue;
+    const { createApp, ref, onMounted } = Vue;
 
     createApp({
         setup() {
-            const activeTab = ref('todo');
-            const newTask = ref('');
-            const note = ref(localStorage.getItem('myNote') || '');
-            const todos = ref(JSON.parse(localStorage.getItem('myTodos')) || [
-                { text: '規劃下週專案進度', done: false },
-                { text: '回覆合作郵件', done: true }
-            ]);
+            const viewMode = ref('month');
+            const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
+            const daysInMonth = 31; // 簡化處理，固定為 31 天
+            const firstDayOffset = 4; // 根據截圖，1號從週五開始 (前有四格空白)
+            
+            const showModal = ref(false);
+            const currentSelectedDate = ref(null);
+            const tempNote = ref('');
+            const notes = ref(JSON.parse(localStorage.getItem('paperrr_notes')) || {});
 
-            const events = ref([
-                { time: '10:00', title: '團隊週會' },
-                { time: '14:30', title: '品牌設計審查' }
-            ]);
-
-            const todayDate = new Date().toLocaleDateString('zh-TW', { month: 'long', day: 'numeric', weekday: 'long' });
-
-            const currentTabName = computed(() => {
-                const names = { todo: '我的任務', calendar: '行程規劃', notes: '隨手筆記' };
-                return names[activeTab.value];
-            });
-
-            const addTodo = () => {
-                if (newTask.value.trim()) {
-                    todos.value.unshift({ text: newTask.value, done: false });
-                    newTask.value = '';
-                    saveTodos();
-                }
+            const selectDate = (date) => {
+                currentSelectedDate.value = date;
+                tempNote.value = notes.value[date] || '';
+                showModal.value = true;
             };
 
-            const saveTodos = () => {
-                localStorage.setItem('myTodos', JSON.stringify(todos.value));
-            };
-
-            // 監聽並保存筆記
             const saveNote = () => {
-                localStorage.setItem('myNote', note.value);
+                notes.value[currentSelectedDate.value] = tempNote.value;
+                localStorage.setItem('paperrr_notes', JSON.stringify(notes.value));
+                showModal.value = false;
             };
 
-            onMounted(() => {
-                lucide.createIcons();
-            });
+            const getNote = (date) => notes.value[date] || null;
 
-            return { activeTab, todos, newTask, note, events, todayDate, currentTabName, addTodo, saveNote };
-        },
-        updated() {
-            lucide.createIcons(); // 確保切換頁面時圖標能正確渲染
+            return { 
+                viewMode, weekDays, daysInMonth, firstDayOffset, 
+                showModal, currentSelectedDate, tempNote, selectDate, saveNote, getNote 
+            };
         }
     }).mount('#app');
 </script>
