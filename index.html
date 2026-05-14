@@ -3,119 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paperrr 2.0 - Plan Assistant</title>
+    <title>Paperrr 2.0</title>
+    <!-- 強制加載 Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { background-color: #FFF5F7; font-family: 'Inter', sans-serif; color: #4A4A4A; }
-        .pink-gradient-bg { background: linear-gradient(135deg, #FF5E9B 0%, #FF4181 100%); }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-radius: 24px; overflow: hidden; }
-        .calendar-cell { aspect-ratio: 1 / 1.1; border: 0.5px solid #F0F0F0; background: #FFF; transition: all 0.2s; }
-        .calendar-cell:hover { background: #FFF9FA; }
-        .switch-pill { background: #FFFFFF; border-radius: 50px; padding: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body { 
+            background-color: #FFF5F7 !important; 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            margin: 0;
+            padding: 20px;
+        }
+        .app-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 40px;
+            border: 1px solid #FFFFFF;
+            box-shadow: 0 20px 50px rgba(255, 182, 193, 0.3);
+            padding: 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .pink-btn {
+            background: linear-gradient(135deg, #FF5E9B 0%, #FF4181 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 65, 129, 0.3);
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            border: 1px solid #FEE2E2;
+            background: #FFFFFF;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .cell {
+            aspect-ratio: 1 / 1.1;
+            border: 0.5px solid #F3F4F6;
+            padding: 10px;
+            font-size: 12px;
+            color: #9CA3AF;
+            cursor: pointer;
+        }
+        .cell:hover { background-color: #FFF9FA; }
     </style>
 </head>
-<body class="p-4 md:p-12">
+<body>
 
-<div id="app" class="max-w-6xl mx-auto">
-    <!-- Header: 標誌與切換按鈕 -->
-    <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+<div id="app">
+    <!-- Header -->
+    <div class="max-w-[1000px] mx-auto flex justify-between items-center mb-8">
         <div class="flex items-center gap-4">
-            <div class="w-14 h-14 pink-gradient-bg rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-pink-200">P</div>
+            <div class="w-12 h-12 pink-btn rounded-2xl flex items-center justify-center text-xl font-bold">P</div>
             <div>
-                <h1 class="text-3xl font-bold tracking-tight text-slate-800">Paperrr <span class="font-light">✸</span> 2.0</h1>
-                <p class="text-[10px] tracking-[0.2em] text-pink-400 font-bold uppercase">Cloud Sync Plan Assistant</p>
+                <h1 class="text-2xl font-bold text-gray-800">Paperrr✸ 2.0</h1>
+                <p class="text-[9px] tracking-widest text-pink-400 font-bold uppercase">Cloud Sync Plan Assistant</p>
             </div>
         </div>
-
-        <div class="switch-pill flex items-center w-64">
-            <button @click="viewMode = 'month'" :class="viewMode === 'month' ? 'pink-gradient-bg text-white shadow-md' : 'text-slate-400'" class="flex-1 py-2 px-4 rounded-full text-sm font-bold transition-all">月度概覽</button>
-            <button @click="viewMode = 'week'" :class="viewMode === 'week' ? 'pink-gradient-bg text-white shadow-md' : 'text-slate-400'" class="flex-1 py-2 px-4 rounded-full text-sm font-bold transition-all">週度執行</button>
+        
+        <div class="bg-white p-1 rounded-full shadow-inner flex">
+            <button class="pink-btn px-6 py-2 rounded-full text-sm font-bold">月度概覽</button>
+            <button class="px-6 py-2 text-gray-400 text-sm font-bold">週度執行</button>
         </div>
-    </header>
+    </div>
 
-    <!-- 主容器：月曆卡片 -->
-    <div class="bg-white/60 backdrop-blur-md rounded-[40px] p-8 shadow-2xl shadow-pink-100 border border-white">
-        <!-- 星期表頭 -->
-        <div class="grid grid-cols-7 mb-6 text-center">
-            <div v-for="day in weekDays" :key="day" class="text-orange-300 font-medium text-sm">{{ day }}</div>
+    <!-- Main Calendar Card -->
+    <div class="app-card">
+        <!-- Weekdays Header -->
+        <div class="grid grid-cols-7 mb-4 text-center">
+            <div v-for="d in ['一','二','三','四','五','六','日']" class="text-orange-300 text-sm font-bold">{{ d }}</div>
         </div>
 
-        <!-- 月曆格線 -->
-        <div v-if="viewMode === 'month'" class="calendar-grid border border-slate-50">
-            <!-- 空白格 (上個月) -->
-            <div v-for="empty in firstDayOffset" :key="'empty-'+empty}" class="calendar-cell bg-slate-50/30"></div>
+        <!-- Grid -->
+        <div class="calendar-grid">
+            <!-- Offset for Friday start (based on your screenshot) -->
+            <div v-for="n in 4" class="cell bg-gray-50/50"></div>
             
-            <!-- 日期格 -->
-            <div v-for="date in daysInMonth" :key="date" class="calendar-cell p-3 relative group cursor-pointer" @click="selectDate(date)">
-                <span class="text-[11px] font-bold text-slate-300 group-hover:text-pink-400 transition-colors">{{ date }}</span>
-                <!-- 內容佔位符 -->
-                <div class="mt-1 h-full w-full overflow-hidden">
-                    <div v-if="getNote(date)" class="text-[10px] text-pink-500 font-medium leading-tight truncate">· {{ getNote(date) }}</div>
+            <!-- Dates -->
+            <div v-for="date in 31" :key="date" class="cell flex flex-col justify-between" @click="addPlan(date)">
+                <span>{{ date }}</span>
+                <div v- if="plans[date]" class="bg-pink-100 text-pink-600 p-1 rounded text-[10px] truncate">
+                    {{ plans[date] }}
                 </div>
             </div>
         </div>
-
-        <!-- 週度模式佔位 -->
-        <div v-else class="py-20 text-center text-slate-300 italic">
-            週度執行介面正在同步中...
-        </div>
     </div>
 
-    <!-- 底部標題 -->
-    <div class="mt-8 flex items-center gap-2">
-        <h2 class="text-2xl font-bold text-slate-700">計畫規劃✦</h2>
-    </div>
-
-    <!-- 簡易彈窗：點擊日期新增內容 -->
-    <div v-if="showModal" class="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
-            <h3 class="text-lg font-bold mb-4 text-pink-600">新增計畫 ({{ currentSelectedDate }}日)</h3>
-            <textarea v-model="tempNote" class="w-full h-32 p-3 bg-slate-50 rounded-xl mb-4 border-none focus:ring-2 focus:ring-pink-300" placeholder="輸入今天的安排..."></textarea>
-            <div class="flex gap-2">
-                <button @click="showModal = false" class="flex-1 py-3 text-slate-400 font-medium">取消</button>
-                <button @click="saveNote" class="flex-1 py-3 pink-gradient-bg text-white rounded-xl font-bold">儲存計畫</button>
-            </div>
-        </div>
+    <div class="max-w-[1000px] mx-auto mt-6">
+        <h2 class="text-xl font-bold text-gray-700">計畫規劃◆</h2>
     </div>
 </div>
 
+<!-- Vue.js 放在最後確保 DOM 已加載 -->
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 <script>
-    const { createApp, ref, onMounted } = Vue;
-
+    const { createApp, ref } = Vue;
     createApp({
         setup() {
-            const viewMode = ref('month');
-            const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
-            const daysInMonth = 31; // 簡化處理，固定為 31 天
-            const firstDayOffset = 4; // 根據截圖，1號從週五開始 (前有四格空白)
+            const plans = ref(JSON.parse(localStorage.getItem('user_plans') || '{}'));
             
-            const showModal = ref(false);
-            const currentSelectedDate = ref(null);
-            const tempNote = ref('');
-            const notes = ref(JSON.parse(localStorage.getItem('paperrr_notes')) || {});
-
-            const selectDate = (date) => {
-                currentSelectedDate.value = date;
-                tempNote.value = notes.value[date] || '';
-                showModal.value = true;
+            const addPlan = (date) => {
+                const note = prompt(`在 ${date} 日新增計畫:`, plans.value[date] || '');
+                if (note !== null) {
+                    plans.value[date] = note;
+                    localStorage.setItem('user_plans', JSON.stringify(plans.value));
+                }
             };
 
-            const saveNote = () => {
-                notes.value[currentSelectedDate.value] = tempNote.value;
-                localStorage.setItem('paperrr_notes', JSON.stringify(notes.value));
-                showModal.value = false;
-            };
-
-            const getNote = (date) => notes.value[date] || null;
-
-            return { 
-                viewMode, weekDays, daysInMonth, firstDayOffset, 
-                showModal, currentSelectedDate, tempNote, selectDate, saveNote, getNote 
-            };
+            return { plans, addPlan };
         }
     }).mount('#app');
 </script>
+
 </body>
 </html>
