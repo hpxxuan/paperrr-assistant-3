@@ -3,130 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paperrr 2.0 - 雲端實時同步中</title>
+    <title>Paperrr 2.0 - 雲端計畫助理</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 CDN -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
-        body { background-color: #FFF9FA; font-family: 'Noto Sans TC', sans-serif; color: #333; margin: 0; padding: 20px; }
-        .glass-card { background: white; border-radius: 45px; box-shadow: 0 25px 60px rgba(255, 150, 180, 0.15); border: 1px solid #FFF1F3; padding: 40px; }
-        .nav-pill { background: #FFFFFF; border-radius: 50px; padding: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .active-pill { background: linear-gradient(135deg, #EE4D9B 0%, #E33E84 100%); color: white; box-shadow: 0 5px 15px rgba(238, 77, 155, 0.4); }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid #F3F4F6; border-radius: 20px; overflow: hidden; background: #FFF; }
-        .cell { aspect-ratio: 1 / 1.1; border: 0.5px solid #F9FAFB; padding: 8px; position: relative; cursor: pointer; transition: 0.2s; }
-        .cell:hover { background-color: #FFF5F7; }
-        .today-circle { background: #EE4D9B; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; items-center: center; justify-content: center; font-size: 11px; }
-        .tag { font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-bottom: 2px; color: white; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        /* 復刻截圖中的標籤顏色 */
-        .tag-green { background-color: #7FE5B6; }
-        .tag-pink { background-color: #FF9ECA; }
-        .tag-blue { background-color: #7FBFFF; }
-        .tag-orange { background-color: #FFAA66; }
-        .cloud-badge { background: #E8F9F1; color: #3BB574; font-size: 10px; padding: 4px 12px; border-radius: 50px; display: flex; align-items: center; gap: 5px; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        body { background-color: #FFF9FA; font-family: 'Noto Sans TC', sans-serif; overflow-x: hidden; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); border: 1px solid #FFFFFF; box-shadow: 0 25px 50px -12px rgba(255, 182, 193, 0.2); }
+        .pink-gradient { background: linear-gradient(135deg, #FF5E9B 0%, #FF82BA 100%); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #FFD1E3; border-radius: 10px; }
+        .calendar-cell { aspect-ratio: 1/1.1; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .calendar-cell:hover { transform: scale(1.02); z-index: 10; }
+        .tag-pill { font-size: 10px; padding: 2px 8px; border-radius: 50px; color: white; margin-bottom: 2px; }
+        [v-cloak] { display: none; }
     </style>
 </head>
-<body>
+<body class="p-4 md:p-10">
 
-<div id="app" class="max-w-[1100px] mx-auto">
-    <!-- Top Header -->
-    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 px-4">
-        <div>
-            <div class="flex items-center gap-3">
-                <div class="w-14 h-14 bg-gradient-to-br from-[#FF7EAD] to-[#FF4E8E] rounded-3xl flex items-center justify-center shadow-lg">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                </div>
-                <h1 class="text-[42px] font-black text-[#1A2B48] leading-none">Paperrr<span class="text-[#FF7E39]">✸</span>2.0</h1>
+<div id="app" v-cloak class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <header class="flex flex-col lg:flex-row justify-between items-center mb-12 gap-8">
+        <div class="flex items-center gap-6">
+            <div class="w-16 h-16 pink-gradient rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-pink-200">
+                <i data-lucide="sparkles" class="w-8 h-8"></i>
             </div>
-            <div class="flex items-center gap-2 mt-2">
-                <div class="cloud-badge font-bold">
-                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M17.5,19c-3.037,0-5.5-2.463-5.5-5.5c0-3.037,2.463-5.5,5.5-5.5s5.5,2.463,5.5,5.5C23,16.537,20.537,19,17.5,19z M17.5,10 c-1.933,0-3.5,1.567-3.5,3.5s1.567,3.5,3.5,3.5s3.5-1.567,3.5-3.5S19.433,10,17.5,10z"/><path d="M11.5,19H6c-2.757,0-5-2.243-5-5c0-2.32,1.59-4.27,3.73-4.85C5.25,6.01,8.19,3.5,11.5,3.5c2.47,0,4.64,1.4,5.69,3.46 C17.3,6.98,17.4,7,17.5,7c0.17,0,0.33,0.01,0.5,0.03V9.1c-0.33-0.06-0.66-0.1-1-0.1c-3.58,0-6.5,2.92-6.5,6.5 c0,1.25,0.36,2.41,0.98,3.4C11.49,18.94,11.49,18.97,11.5,19z"/></svg>
-                    雲端實時同步中
+            <div>
+                <h1 class="text-5xl md:text-7xl font-black text-slate-800 tracking-tighter">
+                    Paperrr<span class="text-orange-500">✷2.0</span>
+                </h1>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="bg-green-50 text-green-600 px-3 py-1 rounded-full text-[10px] font-bold border border-green-100 flex items-center gap-1">
+                        <i data-lucide="cloud" class="w-3 h-3"></i> 雲端實時同步中
+                    </span>
                 </div>
             </div>
         </div>
 
-        <div class="nav-pill flex items-center mt-6 md:mt-0">
-            <button class="px-8 py-2.5 rounded-full text-sm font-bold text-gray-400">年度計畫</button>
-            <button class="px-8 py-2.5 rounded-full text-sm font-bold active-pill">月度概覽</button>
-            <button class="px-8 py-2.5 rounded-full text-sm font-bold text-gray-400">週度執行</button>
-        </div>
+        <nav class="flex bg-white p-2 rounded-full shadow-xl border border-pink-50">
+            <button @click="view = 'year'" :class="view === 'year' ? 'active-pill' : 'inactive-pill'">年度計畫</button>
+            <button @click="view = 'month'" :class="view === 'month' ? 'active-pill' : 'inactive-pill'">月度概覽</button>
+            <button @click="view = 'week'" :class="view === 'week' ? 'active-pill' : 'inactive-pill'">週度執行</button>
+        </nav>
     </header>
 
-    <!-- Main Calendar -->
-    <div class="glass-card">
-        <!-- Month Controller -->
-        <div class="flex justify-between items-center mb-10">
-            <button class="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center text-pink-400 hover:bg-pink-100">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
-            </button>
-            <h2 class="text-2xl font-bold text-[#1A2B48]">2026年 5月</h2>
-            <button class="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center text-pink-400 hover:bg-pink-100">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-            </button>
-        </div>
+    <!-- 月度視圖 (核心功能) -->
+    <main v-if="view === 'month'" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div class="glass-card rounded-[3.5rem] p-6 md:p-10 mb-12">
+            <div class="flex justify-between items-center mb-10">
+                <button @click="changeMonth(-1)" class="p-3 bg-pink-50 rounded-2xl text-pink-500 hover:bg-pink-100"><i data-lucide="chevron-left"></i></button>
+                <h2 class="text-3xl font-black text-slate-800">{{ currentYear }}年 {{ currentMonth + 1 }}月</h2>
+                <button @click="changeMonth(1)" class="p-3 bg-pink-50 rounded-2xl text-pink-500 hover:bg-pink-100"><i data-lucide="chevron-right"></i></button>
+            </div>
 
-        <!-- Week Headers -->
-        <div class="grid grid-cols-7 mb-4 text-center">
-            <div v-for="w in ['一','二','三','四','五','六','日']" class="text-[#FFB38E] text-sm font-medium">{{w}}</div>
-        </div>
-
-        <!-- Grid Container -->
-        <div class="calendar-grid">
-            <!-- Offset -->
-            <div v-for="i in 4" class="cell bg-[#FAFBFF]/30"></div>
-            
-            <!-- Day Cells -->
-            <div v-for="day in 31" :key="day" class="cell flex flex-col items-start gap-1" @click="editDay(day)">
-                <div :class="day === 14 ? 'today-circle' : 'text-gray-300 font-bold text-[11px]'">{{day}}</div>
+            <div class="grid grid-cols-7 gap-1 md:gap-3">
+                <div v-for="d in ['一','二','三','四','五','六','日']" class="text-center text-orange-300 font-black text-xs pb-4 uppercase tracking-widest">{{ d }}</div>
                 
-                <!-- 渲染對應日期的彩色標籤 (完全參照截圖二資訊) -->
-                <div class="w-full mt-1">
-                    <template v-for="plan in getPlans(day)">
-                        <div :class="['tag', plan.color]">{{plan.text}}</div>
-                    </template>
+                <div v-for="empty in firstDayOffset" class="calendar-cell bg-slate-50/30 rounded-3xl"></div>
+                
+                <div v-for="day in daysInMonth" :key="day" @click="openEditModal(day)" class="calendar-cell bg-white border border-slate-50 rounded-3xl p-3 relative cursor-pointer shadow-sm">
+                    <span :class="isToday(day) ? 'bg-pink-500 text-white shadow-lg' : 'text-slate-300'" class="text-[11px] font-black w-6 h-6 flex items-center justify-center rounded-lg">{{ day }}</span>
+                    <div class="mt-1 space-y-1 overflow-hidden">
+                        <div v-for="plan in getPlansByDate(day)" :key="plan.id" :style="{ backgroundColor: plan.color }" class="tag-pill truncate shadow-sm">
+                            {{ plan.text }}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- 雙欄布局 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <!-- 計畫規劃 -->
+            <div>
+                <div class="flex items-center gap-3 mb-6"><i data-lucide="target" class="text-pink-500"></i><h3 class="text-2xl font-black text-slate-800">計畫規劃✦</h3></div>
+                <div class="space-y-4">
+                    <div v-for="plan in allPlans" :key="plan.id" class="bg-white p-5 rounded-[2rem] border border-pink-50 flex items-center shadow-md hover:shadow-xl transition-all">
+                        <span class="bg-pink-50 text-pink-500 px-4 py-2 rounded-full text-xs font-black mr-4">{{ plan.date }}</span>
+                        <span class="font-bold text-slate-700 flex-1">{{ plan.text }}</span>
+                        <i data-lucide="chevron-right" class="text-slate-200"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 代辦清單 -->
+            <div>
+                <div class="flex items-center gap-3 mb-6"><i data-lucide="list-todo" class="text-orange-500"></i><h3 class="text-2xl font-black text-slate-800">代辦清單✦</h3></div>
+                <div class="bg-white p-4 rounded-[2rem] shadow-xl border border-pink-100 flex gap-3 mb-6">
+                    <input v-model="quickTodo" @keyup.enter="addQuickTodo" placeholder="快速新增未安排日期的計畫..." class="flex-1 bg-transparent outline-none px-4 font-bold text-slate-600">
+                    <button @click="addQuickTodo" class="pink-gradient p-4 rounded-2xl text-white shadow-lg"><i data-lucide="send"></i></button>
+                </div>
+                <div class="space-y-3">
+                    <div v-for="(todo, index) in todos" :key="index" class="bg-white p-5 rounded-[1.5rem] border border-pink-50 flex items-center group">
+                        <button @click="todo.done = !todo.done" class="mr-4">
+                            <i v-if="todo.done" data-lucide="check-circle-2" class="text-pink-500"></i>
+                            <i v-else data-lucide="circle" class="text-pink-100 group-hover:text-pink-300"></i>
+                        </button>
+                        <span :class="todo.done ? 'text-slate-300 line-through' : 'text-slate-700'" class="font-bold">{{ todo.text }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 年度與週度模式 (佔位提示) -->
+    <div v-else class="py-32 text-center text-slate-300 italic text-xl font-bold">
+        該模式正在同步雲端數據中... ☕
     </div>
 
-    <div class="mt-8 flex items-center gap-2 px-4">
-        <h2 class="text-2xl font-bold text-[#1A2B48]">計畫規劃◆</h2>
+    <!-- 編輯 Modal -->
+    <div v-if="modal.show" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-md rounded-[3rem] p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black text-slate-800">新增 {{ modal.date }} 日計畫</h3>
+                <button @click="modal.show = false"><i data-lucide="x" class="text-slate-400"></i></button>
+            </div>
+            <input v-model="modal.text" placeholder="今天想達成什麼目標？" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 mb-4 outline-none focus:border-pink-300 font-bold">
+            <button @click="savePlan" class="w-full pink-gradient py-5 rounded-2xl text-white font-black tracking-widest shadow-xl">儲存計畫</button>
+        </div>
     </div>
 </div>
 
 <script>
-    const { createApp, ref } = Vue;
+    const { createApp, ref, computed, onMounted, nextTick } = Vue;
+
     createApp({
         setup() {
-            // 預設資料：完整復刻截圖二中的行程資訊
-            const dailyPlans = ref({
-                12: [{ text: '泰瑞-品心', color: 'tag-green' }],
-                13: [{ text: '月會', color: 'tag-pink' }],
-                15: [{ text: '腳本討論', color: 'tag-pink' }, { text: '美眼儀', color: 'tag-blue' }],
-                18: [{ text: '薇佳20:00', color: 'tag-orange' }, { text: '水湧拍攝', color: 'tag-pink' }],
-                19: [{ text: '內部拍攝', color: 'tag-pink' }],
-                20: [{ text: 'lulu 12:00 po 限動', color: 'tag-pink' }],
-                21: [{ text: '薇佳8:00', color: 'tag-orange' }, { text: '歐漾20:00', color: 'tag-orange' }],
-                22: [{ text: '寶雅5檔依克多因', color: 'tag-blue' }, { text: '出國行程確認', color: 'tag-pink' }],
-                25: [{ text: '薇佳19:00', color: 'tag-orange' }, { text: '歐漾21:00', color: 'tag-orange' }],
-                27: [{ text: 'mia直播', color: 'tag-pink' }]
+            const view = ref('month');
+            const currentYear = ref(2026);
+            const currentMonth = ref(4); // 5月
+            const quickTodo = ref('');
+            
+            const modal = ref({ show: false, date: null, text: '' });
+            const todos = ref([
+                { text: '整理產品展示腳本', done: false },
+                { text: '回覆官方 IG 留言', done: true }
+            ]);
+
+            const allPlans = ref([
+                { id: 1, date: '12', text: '泰瑞-品心', color: '#7FE5B6' },
+                { id: 2, date: '13', text: '月會', color: '#FF9ECA' },
+                { id: 3, date: '15', text: '腳本討論', color: '#FF9ECA' },
+                { id: 4, date: '15', text: '美眼儀', color: '#7FBFFF' },
+                { id: 5, date: '18', text: '薇佳20:00', color: '#FFAA66' }
+            ]);
+
+            const daysInMonth = computed(() => new Date(currentYear.value, currentMonth.value + 1, 0).getDate());
+            const firstDayOffset = computed(() => {
+                let d = new Date(currentYear.value, currentMonth.value, 1).getDay();
+                return d === 0 ? 6 : d - 1;
             });
 
-            const getPlans = (day) => dailyPlans.value[day] || [];
+            const getPlansByDate = (day) => allPlans.value.filter(p => p.date == day);
+            const isToday = (day) => day === 14 && currentMonth.value === 4;
 
-            const editDay = (day) => {
-                const text = prompt(`在 ${day} 日新增計畫內容:`);
-                if (text) {
-                    const colors = ['tag-pink', 'tag-blue', 'tag-green', 'tag-orange'];
-                    const color = colors[Math.floor(Math.random() * colors.length)];
-                    if (!dailyPlans.value[day]) dailyPlans.value[day] = [];
-                    dailyPlans.value[day].push({ text, color });
-                }
+            const openEditModal = (day) => {
+                modal.value = { show: true, date: day, text: '' };
             };
 
-            return { dailyPlans, getPlans, editDay };
+            const savePlan = () => {
+                if (modal.value.text) {
+                    allPlans.value.push({
+                        id: Date.now(),
+                        date: String(modal.value.date),
+                        text: modal.value.text,
+                        color: '#FF9ECA'
+                    });
+                }
+                modal.value.show = false;
+                nextTick(() => lucide.createIcons());
+            };
+
+            const addQuickTodo = () => {
+                if (quickTodo.value) {
+                    todos.value.unshift({ text: quickTodo.value, done: false });
+                    quickTodo.value = '';
+                }
+                nextTick(() => lucide.createIcons());
+            };
+
+            onMounted(() => lucide.createIcons());
+
+            return { 
+                view, currentYear, currentMonth, daysInMonth, firstDayOffset, 
+                getPlansByDate, isToday, allPlans, todos, quickTodo, modal,
+                openEditModal, savePlan, addQuickTodo
+            };
         }
     }).mount('#app');
 </script>
+
+<style>
+    .active-pill { @apply bg-pink-500 text-white shadow-xl px-8 py-3 rounded-full text-sm font-black transition-all; }
+    .inactive-pill { @apply text-pink-400 hover:bg-pink-50 px-8 py-3 rounded-full text-sm font-black transition-all; }
+</style>
 </body>
 </html>
