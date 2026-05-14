@@ -2,160 +2,134 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paperrr✷ 2.0 | 計畫助理</title>
-    <!-- 載入 Tailwind CSS & Vue 3 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Personal Assistant Pro</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 CDN -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <!-- 載入 Firebase (用於雲端同步) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
-        body { font-family: 'Noto+Sans+TC', sans-serif; background-color: #FFF9FA; }
-        .custom-shadow { box-shadow: 0 10px 40px -10px rgba(255, 182, 193, 0.3); }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        body { background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .app-container { max-width: 480px; min-height: 100vh; background: #ffffff; margin: 0 auto; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+        .glass-nav { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.8); border-top: 1px solid #eee; }
+        .safe-area-bottom { padding-bottom: calc(env(safe-area-inset-bottom) + 70px); }
+        input:focus { outline: none; border-color: #6366f1; }
     </style>
 </head>
 <body>
-    <div id="app" class="max-w-5xl mx-auto p-4 md:p-10 pb-20">
-        <!-- 頂部標題 -->
-        <header class="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
-            <div class="flex items-center gap-4">
-                <div class="bg-pink-500 p-4 rounded-3xl text-white shadow-xl shadow-pink-100 font-black text-2xl">P</div>
-                <div>
-                    <h1 class="text-3xl font-black text-slate-800 tracking-tighter">Paperrr✷ 2.0</h1>
-                    <p class="text-[10px] font-black text-pink-400 uppercase tracking-widest">Cloud Sync Plan Assistant</p>
+
+<div id="app" class="app-container flex flex-col">
+    <!-- Header -->
+    <header class="p-6 pb-2">
+        <h1 class="text-2xl font-bold text-gray-800">{{ currentTabName }}</h1>
+        <p class="text-sm text-gray-500">{{ todayDate }}</p>
+    </header>
+
+    <main class="flex-grow p-6 safe-area-bottom">
+        
+        <!-- Tab 1: 任務清單 -->
+        <div v-if="activeTab === 'todo'" class="space-y-4">
+            <div class="flex gap-2 mb-6">
+                <input v-model="newTask" @keyup.enter="addTodo" type="text" placeholder="新增任務..." class="flex-1 bg-gray-100 rounded-2xl px-4 py-3 text-sm">
+                <button @click="addTodo" class="bg-indigo-600 text-white p-3 rounded-2xl">
+                    <i data-lucide="plus"></i>
+                </button>
+            </div>
+            <div v-for="(item, index) in todos" :key="index" class="flex items-center p-4 bg-gray-50 rounded-2xl transition-all" :class="{'opacity-50': item.done}">
+                <input type="checkbox" v-model="item.done" class="w-5 h-5 rounded-full border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                <span class="ml-3 text-gray-700" :class="{'line-through': item.done}">{{ item.text }}</span>
+            </div>
+        </div>
+
+        <!-- Tab 2: 行程規劃 (簡化版) -->
+        <div v-if="activeTab === 'calendar'" class="space-y-4">
+            <div class="bg-indigo-50 p-4 rounded-3xl border border-indigo-100">
+                <h3 class="font-semibold text-indigo-900 mb-2">今日行程</h3>
+                <div v-for="event in events" class="flex gap-3 py-2 border-l-2 border-indigo-300 pl-3 mb-2">
+                    <span class="text-xs font-bold text-indigo-600">{{ event.time }}</span>
+                    <span class="text-sm text-gray-700">{{ event.title }}</span>
                 </div>
             </div>
-            <!-- 視圖切換 -->
-            <div class="flex gap-2 bg-white p-2 rounded-[2rem] border border-pink-50 shadow-md">
-                <button @click="view = 'month'" :class="view === 'month' ? 'bg-pink-500 text-white shadow-lg' : 'text-slate-400'" class="px-8 py-2.5 rounded-3xl text-[12px] font-black transition-all">月度概覽</button>
-                <button @click="view = 'week'" :class="view === 'week' ? 'bg-pink-500 text-white shadow-lg' : 'text-slate-400'" class="px-8 py-2.5 rounded-3xl text-[12px] font-black transition-all">週度執行</button>
-            </div>
-        </header>
+        </div>
 
-        <!-- 月度概覽 (圖一：藥丸風格) -->
-        <main v-if="view === 'month'" class="space-y-8 animate-in fade-in">
-            <div class="bg-white p-6 rounded-[2.5rem] custom-shadow border border-pink-50">
-                <div class="grid grid-cols-7 mb-4 border-b border-pink-50 pb-2 text-center text-[11px] font-black text-orange-300">
-                    <div v-for="w in weekNames" :key="w">{{w}}</div>
-                </div>
-                <div class="grid grid-cols-7 gap-px bg-slate-50 border border-slate-50 rounded-2xl overflow-hidden">
-                    <div v-for="(day, idx) in calendarDays" :key="idx" class="min-h-[110px] bg-white p-1 relative border-r border-b border-slate-50">
-                        <template v-if="day">
-                            <span class="text-[10px] font-black text-slate-300 ml-1">{{day.getDate()}}</span>
-                            <div class="space-y-1 mt-1">
-                                <div v-for="ev in getDayEvents(day)" :key="ev.id" 
-                                     class="text-[10px] font-bold px-2 py-1 rounded-lg text-white truncate shadow-sm opacity-85"
-                                     :style="{ backgroundColor: getTagColor(ev.tagId) }">
-                                    <span v-if="ev.time" class="mr-1 opacity-70">{{ev.time}}</span>{{ev.title}}
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
+        <!-- Tab 3: 隨手筆記 -->
+        <div v-if="activeTab === 'notes'" class="space-y-4">
+            <textarea v-model="note" placeholder="在這裡記錄任何靈感..." class="w-full h-64 bg-yellow-50 p-4 rounded-3xl text-gray-700 border-none resize-none"></textarea>
+        </div>
 
-            <!-- 計畫規劃清單 (日期排序) -->
-            <div class="space-y-4">
-                <h3 class="text-xl font-black text-slate-800 px-2 flex items-center gap-2">計畫規劃✦</h3>
-                <div v-for="t in sortedTasks" :key="t.id" class="bg-white p-4 px-6 rounded-3xl border border-pink-50 flex items-center group hover:scale-[1.01] transition-all cursor-pointer shadow-sm">
-                    <div class="shrink-0 mr-8 bg-pink-50/50 py-2 px-5 rounded-2xl">
-                        <div class="flex items-center">
-                            <span class="font-black text-pink-500 text-[14px]">{{formatMMDD(t.startDate)}}</span>
-                            <span class="w-8"></span>
-                            <span class="font-medium text-pink-300 text-[14px]">({{getWeekDay(t.startDate)}})</span>
-                        </div>
-                    </div>
-                    <div class="font-bold text-slate-700 flex-1 truncate">{{t.title}}</div>
-                </div>
-            </div>
-        </main>
+    </main>
 
-        <!-- 週度執行 (完成反灰不槓線) -->
-        <main v-else class="space-y-6">
-            <div class="bg-white p-8 rounded-[3rem] custom-shadow border border-pink-50">
-                <h3 class="text-2xl font-black text-slate-800 mb-8">今日計畫追蹤✦</h3>
-                <div class="space-y-4">
-                    <div v-for="t in todayTasks" :key="t.id" class="flex items-center gap-5 p-6 bg-slate-50/50 rounded-3xl border border-slate-100">
-                        <button @click="toggleComplete(t)" :class="t.completed ? 'bg-pink-500 border-pink-500 text-white' : 'border-pink-200'" class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all">
-                            <span v-if="t.completed">✓</span>
-                        </button>
-                        <h4 :class="t.completed ? 'text-slate-400' : 'text-slate-700'" class="font-black text-lg transition-all">{{t.title}}</h4>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 w-full max-w-[480px] glass-nav flex justify-around py-3 px-6">
+        <button @click="activeTab = 'todo'" :class="activeTab === 'todo' ? 'text-indigo-600' : 'text-gray-400'" class="flex flex-col items-center">
+            <i data-lucide="check-circle-2"></i>
+            <span class="text-[10px] mt-1 font-medium">任務</span>
+        </button>
+        <button @click="activeTab = 'calendar'" :class="activeTab === 'calendar' ? 'text-indigo-600' : 'text-gray-400'" class="flex flex-col items-center">
+            <i data-lucide="calendar"></i>
+            <span class="text-[10px] mt-1 font-medium">行程</span>
+        </button>
+        <button @click="activeTab = 'notes'" :class="activeTab === 'notes' ? 'text-indigo-600' : 'text-gray-400'" class="flex flex-col items-center">
+            <i data-lucide="edit-3"></i>
+            <span class="text-[10px] mt-1 font-medium">筆記</span>
+        </button>
+    </nav>
+</div>
 
-    <script type="module">
-        const { createApp, ref, computed, onMounted } = Vue;
+<script>
+    const { createApp, ref, computed, onMounted, nextTick } = Vue;
 
-        // --- Firebase 配置 (請在此處填入您的資訊) ---
-        const firebaseConfig = {
-            apiKey: "您的_API_KEY",
-            authDomain: "您的專案ID.firebaseapp.com",
-            projectId: "您的專案ID",
-            storageBucket: "您的專案ID.appspot.com",
-            messagingSenderId: "您的發送者ID",
-            appId: "您的應用程式ID"
-        };
+    createApp({
+        setup() {
+            const activeTab = ref('todo');
+            const newTask = ref('');
+            const note = ref(localStorage.getItem('myNote') || '');
+            const todos = ref(JSON.parse(localStorage.getItem('myTodos')) || [
+                { text: '規劃下週專案進度', done: false },
+                { text: '回覆合作郵件', done: true }
+            ]);
 
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        const appId = 'paperrr-v2-tags-sync';
+            const events = ref([
+                { time: '10:00', title: '團隊週會' },
+                { time: '14:30', title: '品牌設計審查' }
+            ]);
 
-        createApp({
-            setup() {
-                const view = ref('month');
-                const tasks = ref([]);
-                const tags = ref([]);
-                const user = ref(null);
-                const currentDate = ref(new Date());
-                const weekNames = ["一", "二", "三", "四", "五", "六", "日"];
+            const todayDate = new Date().toLocaleDateString('zh-TW', { month: 'long', day: 'numeric', weekday: 'long' });
 
-                onMounted(() => {
-                    auth.onAuthStateChanged(u => {
-                        if (!u) auth.signInAnonymously();
-                        user.value = u;
-                        if(u) loadData(u.uid);
-                    });
-                });
+            const currentTabName = computed(() => {
+                const names = { todo: '我的任務', calendar: '行程規劃', notes: '隨手筆記' };
+                return names[activeTab.value];
+            });
 
-                const loadData = (uid) => {
-                    db.collection(`artifacts/${appId}/users/${uid}/tasks`).onSnapshot(s => tasks.value = s.docs.map(d => ({...d.data(), id: d.id})));
-                    db.collection(`artifacts/${appId}/users/${uid}/tags`).onSnapshot(s => tags.value = s.docs.map(d => ({...d.data(), id: d.id})));
-                };
+            const addTodo = () => {
+                if (newTask.value.trim()) {
+                    todos.value.unshift({ text: newTask.value, done: false });
+                    newTask.value = '';
+                    saveTodos();
+                }
+            };
 
-                const sortedTasks = computed(() => [...tasks.value].sort((a,b) => new Date(a.startDate) - new Date(b.startDate)));
-                const todayTasks = computed(() => tasks.value.filter(t => t.startDate === new Date().toISOString().split('T')[0]));
+            const saveTodos = () => {
+                localStorage.setItem('myTodos', JSON.stringify(todos.value));
+            };
 
-                const calendarDays = computed(() => {
-                    const y = currentDate.value.getFullYear();
-                    const m = currentDate.value.getMonth();
-                    const dInM = new Date(y, m + 1, 0).getDate();
-                    const first = (new Date(y, m, 1).getDay() + 6) % 7;
-                    const res = Array(first).fill(null);
-                    for(let i=1; i<=dInM; i++) res.push(new Date(y,m,i));
-                    return res;
-                });
+            // 監聽並保存筆記
+            const saveNote = () => {
+                localStorage.setItem('myNote', note.value);
+            };
 
-                const getDayEvents = (day) => {
-                    const s = day.toISOString().split('T')[0];
-                    return tasks.value.filter(t => t.startDate === s);
-                };
+            onMounted(() => {
+                lucide.createIcons();
+            });
 
-                const formatMMDD = (s) => s.split('-').slice(1).join(' / ');
-                const getWeekDay = (s) => weekNames[(new Date(s).getDay() + 6) % 7];
-                const getTagColor = (id) => tags.value.find(t => t.id === id)?.color || '#FF82BA';
-                const toggleComplete = (t) => db.collection(`artifacts/${appId}/users/${user.value.uid}/tasks`).doc(t.id).update({completed: !t.completed});
-
-                return { view, weekNames, sortedTasks, todayTasks, calendarDays, getDayEvents, formatMMDD, getWeekDay, getTagColor, toggleComplete };
-            }
-        }).mount('#app');
-    </script>
+            return { activeTab, todos, newTask, note, events, todayDate, currentTabName, addTodo, saveNote };
+        },
+        updated() {
+            lucide.createIcons(); // 確保切換頁面時圖標能正確渲染
+        }
+    }).mount('#app');
+</script>
 </body>
 </html>
